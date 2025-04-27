@@ -1,36 +1,35 @@
 #ifndef NET_H
 #define NET_H
 
-#include <stdint.h>
-#include <sys/types.h>
+#include <sys/types.h>   // ssize_t, size_t
 
 /**
- * Inicializa um socket RAW na interface especificada.
+ * @brief Inicializa o raw socket após criação e bind:
+ *   - Define SO_RCVTIMEO = 300 ms
+ *   - Em DEBUG, ativa PACKET_MR_PROMISC na eth0
  *
- * @param iface Nome da interface (ex: "eth0").
- * @return descritor de arquivo do socket aberto.
- * @exit em caso de erro crítico.
+ * @param sockfd Socket AF_PACKET/SOCK_RAW já criado e bindado.
  */
-int net_init(const char *iface);
+void net_init(int sockfd);
 
 /**
- * Envia dados brutos no socket RAW.
- *
- * @param fd    descritor de arquivo do socket (retornado por net_init)
- * @param buf   buffer de bytes a enviar
- * @param len   número de bytes a enviar
- * @return número de bytes efetivamente enviados, ou -1 em erro.
+ * @brief Envia len bytes pelo raw socket.
+ * @param sockfd Socket bruto
+ * @param buf    Dados a enviar
+ * @param len    Quantidade de bytes
+ * @return >0 = bytes enviados; –1 = erro (perror já chamado)
  */
-ssize_t net_send(int fd, const uint8_t *buf, size_t len);
+ssize_t net_send(int sockfd, const void *buf, size_t len);
 
 /**
- * Recebe dados brutos do socket RAW.
- *
- * @param fd       descritor de arquivo do socket
- * @param buf      buffer de recepção
- * @param bufsize  tamanho do buffer de recepção
- * @return número de bytes lidos, ou -1 em erro.
+ * @brief Recebe até len bytes do raw socket.
+ * @param sockfd Socket bruto
+ * @param buf    Buffer de saída
+ * @param len    Capacidade de buf
+ * @return >0 = bytes lidos;
+ *          0 = timeout (300 ms sem dados);
+ *         –1 = erro fatal (perror já chamado)
  */
-ssize_t net_recv(int fd, uint8_t *buf, size_t bufsize);
+ssize_t net_recv(int sockfd, void *buf, size_t len);
 
-#endif // NET_H
+#endif /* NET_H */

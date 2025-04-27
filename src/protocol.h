@@ -2,16 +2,30 @@
 #define PROTOCOL_H
 
 #include <stdint.h>
+#include <stddef.h>
 
-// —————————— Constantes do frame ——————————
-#define FRAME_START_MARKER 0x7E
-#define MAX_PAYLOAD_SIZE   127
+/*
+campos da msg e onde estão:
+    marcador início	8 bits	Byte 0 (0x7E)
+    tamanho	7 bits	Bits 7..1 do Byte 1
+    MSB de seq	1 bit	Bit 0 do Byte 1
+    LSBs de seq	4 bits	Bits 7..4 do Byte 2
+    tipo	4 bits	Bits 3..0 do Byte 2
+    checksum	8 bits	Byte 3
+    payload	0–127 bytes	Bytes 4…x (conforme “tamanho”)
+*/
 
-// —————————— Tipos de mensagem (4 bits) ——————————
+/*— Constantes —*/
+#define FRAME_MARKER 0x7E    // 0111 1110
+#define MAX_DATA_LEN 127     // payload máximo
+#define SEQ_MODULO 32      // 5 bits → 0…31
+
+/*— Tipos de mensagem (4 bits) —*/
 typedef enum {
     MSG_ACK = 0,
     MSG_NACK = 1,
     MSG_OK_ACK = 2,
+    /*   3 livre    */
     MSG_TAMANHO = 4,
     MSG_DADOS = 5,
     MSG_TEXTO_ACK_NOME = 6,
@@ -22,29 +36,54 @@ typedef enum {
     MSG_MOV_UP = 11,
     MSG_MOV_DOWN = 12,
     MSG_MOV_LEFT = 13,
+    /*  14 livre    */
     MSG_ERRO = 15
 } msg_type_t;
 
-// —————————— Códigos de erro (payload de erro) ——————————
 typedef enum {
     ERR_NO_PERMISSION = 0,
     ERR_NO_SPACE = 1
 } err_code_t;
 
-// —————————— Estrutura de um frame ——————————
-#pragma pack(push,1)
-typedef struct {
-    uint8_t   start;       // = FRAME_START_MARKER
-    uint8_t   size_seq;    // bits [7..1]=tamanho, [0]=primeiro bit de sequência
-    uint8_t   seq_type;    // bits [7..3]=seq (5 bits), [2..0]=tipo (3 bits) + 1 bit livre!
-    uint8_t   checksum;
-    uint8_t   payload[MAX_PAYLOAD_SIZE];
-} frame_t;
-#pragma pack(pop)
+/**
+ * @brief   Calcula o checksum do frame:
+ *          checksum = ~ (len + seq + type + Σdata[i])
+ * @param   len   número de bytes de payload (0…MAX_DATA_LEN)
+ * @param   seq   número de sequência (0…SEQ_MODULO-1)
+ * @param   type  tipo de mensagem (0…15)
+ * @param   data  ponteiro para payload (ou NULL se len==0)
+ * @return  checksum de 8 bits
+ */
+uint8_t compute_csum(uint8_t len,
+                         uint8_t seq,
+                         msg_type_t type,
+                         const uint8_t *data);
 
-// —————————— Helpers de montagem/desmontagem ——————————
-uint8_t build_size_seq(uint8_t size, uint8_t seq);
-uint8_t build_seq_type(uint8_t seq, msg_type_t type);
-uint8_t calc_checksum(const frame_t *f);
+/**
+ * @brief Empacota um frame de acordo com a mensagem descrita no início do arquivo
+ *
+ * @param seq     0…31 (5 bits)
+ * @param type    0…15 (4 bits)
+ * @param data    ponteiro (ou NULL se len==0) 
+ * @param len     0…MAX_DATA_LEN (7 bits)
+ * @param buf     saída, precisa ter (4+len) bytes
+ * @return        total de bytes escritos (4+len), ou 0 em erro
+ */
+size_t pack_frame(uint8_t seq,
+                  uint8_t type,
+                  const uint8_t *data,
+                  uint8_t len,
+                  uint8_t *buf);
 
-#endif // PROTOCOL_H
+/**
+ * @brief Desempacota buf[0..length−1], validando marker/tamanho/csum.
+ * @return 0 em sucesso (preenche seq/type/data/len), –1 em erro.
+ */
+int unpack_frame(const uint8_t *buf,
+                 size_t length,
+                 uint8_t *out_seq,
+                 msg_type_t *out_type,
+                 uint8_t *out_data,
+                 uint8_t *out_len);
+
+#endif
