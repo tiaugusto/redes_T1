@@ -48,6 +48,52 @@ int main(void) {
     fl = pack_frame(5,MSG_DADOS,(uint8_t*)"A",1,buf);
     buf[3]^=0xFF; assert(unpack_frame(buf,fl,&seq2,&type2,out,&len2)==-1);
 
+        // Teste com mensagens reais
+    printf("→ Teste com mensagens reais\n");
+
+    struct {
+        uint8_t seq;
+        msg_type_t type;
+        const char *msg;
+    } exemplos[] = {
+        { 2, MSG_DADOS,             "Olá, mundo!" },
+        { 3, MSG_TEXTO_ACK_NOME,    "capitulo1.txt" },
+        { 4, MSG_VIDEO_ACK_NOME,    "video_intro.mp4" },
+        { 5, MSG_IMAGEM_ACK_NOME,   "foto123.jpg" },
+        { 6, MSG_MOV_DIR,           "" },
+        { 7, MSG_MOV_LEFT,          "" }
+    };
+
+    for (size_t i = 0; i < sizeof(exemplos)/sizeof(exemplos[0]); i++) {
+        uint8_t len = (uint8_t)strlen(exemplos[i].msg);
+        printf("  [%zu] seq=%u, type=%u, msg=\"%s\"\n",
+               i, exemplos[i].seq, exemplos[i].type, exemplos[i].msg);
+
+        fl = pack_frame(exemplos[i].seq, exemplos[i].type,
+                        (const uint8_t *)exemplos[i].msg, len, buf);
+        if (fl != (size_t)(4 + len)) fail("real: tamanho errado");
+
+        if (unpack_frame(buf, fl, &seq2, &type2, out, &len2) < 0)
+            fail("real: unpack falhou");
+
+        if (seq2 != exemplos[i].seq) fail("real: seq mismatch");
+        if (type2 != exemplos[i].type) fail("real: type mismatch");
+        if (len2 != len) fail("real: len mismatch");
+
+        if (len2 > 0 && memcmp(out, exemplos[i].msg, len2) != 0) {
+            printf("   Esperado: %.*s\n", len, exemplos[i].msg);
+            printf("   Recebido: %.*s\n", len2, out);
+            fail("real: payload mismatch");
+        }
+
+        // printa resultado decodificado
+        if (len2 > 0)
+            printf("     ✔ Mensagem recebida: \"%.*s\"\n", len2, out);
+        else
+            printf("     ✔ Sem payload (comando)\n");
+    }
+
     printf("✅ protocol_extensive OK\n");
+
     return 0;
 }

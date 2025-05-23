@@ -20,12 +20,14 @@ campos da msg e onde estão:
 #define MAX_DATA_LEN 127     // payload máximo
 #define SEQ_MODULO 32      // 5 bits → 0…31
 
+#define MAX_RETRANSMISSIONS 5
+
 /*— Tipos de mensagem (4 bits) —*/
 typedef enum {
     MSG_ACK = 0,
     MSG_NACK = 1,
     MSG_OK_ACK = 2,
-    /*   3 livre    */
+    MSG_INI_ARQ = 3,
     MSG_TAMANHO = 4,
     MSG_DADOS = 5,
     MSG_TEXTO_ACK_NOME = 6,

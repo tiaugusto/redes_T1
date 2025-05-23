@@ -1,4 +1,5 @@
 #include "protocol.h"
+#include <stdio.h>
 #include <string.h>
 
 
@@ -49,33 +50,48 @@ int unpack_frame(const uint8_t *buf,
                  uint8_t *out_data,
                  uint8_t *out_len)
 {
-    if (length < 4 || buf[0] != FRAME_MARKER)
+    if (length < 4) {
+        fprintf(stderr, "[UNPACK] Rejeitado: pacote muito curto (%zu bytes)\n", length);
         return -1;
+    }
 
-    // Byte 1
+    if (buf[0] != FRAME_MARKER) {
+        fprintf(stderr, "[UNPACK] Rejeitado: marcador inválido (0x%02X)\n", buf[0]);
+        return -1;
+    }
+
+    // Byte 1 e Byte 2
     uint8_t b1 = buf[1];
-    uint8_t len = b1 >> 1;        // bits7..1
-    uint8_t msb_seq = b1 & 0x01;  // bit0, 0x01 = 00000001
+    uint8_t len = b1 >> 1;
+    uint8_t msb_seq = b1 & 0x01;
 
-    // Byte 2
     uint8_t b2 = buf[2];
-    uint8_t seq_low = (b2 >> 4) & 0x0F; // bits7..4, 0x0F = 00001111
-    uint8_t type = b2 & 0x0F;        // bits3..0
-
-    if (length != (size_t)(4 + len))
-        return -1;
+    uint8_t seq_low = (b2 >> 4) & 0x0F;
+    uint8_t type = b2 & 0x0F;
 
     uint8_t seq = (uint8_t)((msb_seq << 4) | seq_low);
 
-    // Valida checksum
-    if (buf[3] != compute_csum(len, seq, type, buf + 4))
+    if (length < (size_t)(4 + len)) {
+        fprintf(stderr, "[UNPACK] Rejeitado: pacote curto demais. Esperado no mínimo %u, recebido %zu\n",
+                4 + len, length);
         return -1;
+    }
 
+    uint8_t checksum = compute_csum(len, seq, type, buf + 4);
+    if (buf[3] != checksum) {
+        fprintf(stderr,
+                "[UNPACK] Rejeitado: checksum inválido. Esperado 0x%02X, recebido 0x%02X\n",
+                checksum, buf[3]);
+        return -1;
+    }
+
+    // sucesso
     *out_len  = len;
     *out_seq  = seq;
     *out_type = type;
-    if (len)
+    if (len > 0 && out_data != NULL)
         memcpy(out_data, buf + 4, len);
 
+    fprintf(stderr, "[UNPACK] OK: seq=%u, type=%u, len=%u\n", seq, type, len);
     return 0;
 }
