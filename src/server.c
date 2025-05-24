@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        if (type >= MSG_MOV_UP && type <= MSG_MOV_DIR) {
+        if (type >= MSG_MOV_DIR && type <= MSG_MOV_LEFT) {
             
             static int px = 0, py = 0;
             switch (type) {
@@ -139,10 +139,10 @@ int main(int argc, char **argv) {
                 case MSG_MOV_DIR:  if (px < GRID_SIZE - 1) px++; break;
                 default: break;
             }
-            fprintf(stderr, "[SERVER] ACK para seq=%d (tipo %d recebido)\n", recv_seq, type);
+            //fprintf(stderr, "[SERVER] ACK para seq=%d (tipo %d recebido)\n", recv_seq, type);
 
             // ACK do movimento
-            fprintf(stderr, "[SERVER] Enviando ACK: seq=%d\n", recv_seq);
+            //fprintf(stderr, "[SERVER] Enviando ACK: seq=%d\n", recv_seq);
             protocol_send(sock_fd, recv_seq, MSG_ACK, NULL, 0);
 
             ui_draw_map(treasure_x, treasure_y, NUM_TREASURES);

@@ -92,6 +92,6 @@ int unpack_frame(const uint8_t *buf,
     if (len > 0 && out_data != NULL)
         memcpy(out_data, buf + 4, len);
 
-    fprintf(stderr, "[UNPACK] OK: seq=%u, type=%u, len=%u\n", seq, type, len);
+    // fprintf(stderr, "[UNPACK] OK: seq=%u, type=%u, len=%u\n", seq, type, len);
     return 0;
 }

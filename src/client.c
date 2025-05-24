@@ -29,9 +29,8 @@ void send_move(msg_type_t mov_type) {
             return;
         }
         rv = protocol_recv(sock_fd, &ack_seq, &ack_type, NULL, &dummy_len);
-        printf("[DEBUG] Recebido: seq=%d, type=%d (esperado seq=%d, type=%d)\n",
-       ack_seq, ack_type, seq_num, MSG_ACK);
         if (rv == 1 && ack_type == MSG_ACK && ack_seq == seq_num) {
+            //printf("[DEBUG] Recebido: seq=%d type=%d  (esperado seq=%d type=%d)\n",
             seq_num = (seq_num + 1) % SEQ_MODULO;
             // atualiza posição
             switch (mov_type) {

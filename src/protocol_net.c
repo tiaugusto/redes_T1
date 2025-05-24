@@ -51,12 +51,12 @@ if (buf[14] != FRAME_MARKER) {
     if (n == 0) return 0;    // timeout
     if (n < 0) return -1;    // erro
 
-    printf("[DEBUG] Dump do pacote recebido:\n");
-    for (int i = 0; i < n; i++) {
-        printf("%02X ", buf[i]);
-        if ((i+1) % 16 == 0) printf("\n");
-    }
-    printf("\n");
+    //printf("[DEBUG] Dump do pacote recebido:\n");
+    //for (int i = 0; i < n; i++) {
+    //    printf("%02X ", buf[i]);
+    //    if ((i+1) % 16 == 0) printf("\n");
+    //}
+    //printf("\n");
 
     // Pular o cabeçalho Ethernet
     uint8_t *payload = buf + 14;
