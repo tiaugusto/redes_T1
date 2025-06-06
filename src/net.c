@@ -70,7 +70,7 @@ int net_init(const char *iface) {
 
 #define ETH_HDR_LEN 14
 #define MIN_FRAME_LEN 60  // opcional, mas recomendado para Ethernet
-#define MAX_FRAME_LEN 127
+#define MAX_FRAME_LEN 131
 
 ssize_t net_send(int sockfd, const void *buf, size_t len) {
     // 1) buffer para frame completo
