@@ -152,17 +152,6 @@ int main(int argc, char **argv) {
 
     init_treasures();
 
-    // Conta quantos tesouros ainda não foram enviados
-    int n_visiveis = 0;
-    int tx[NUM_TREASURES], ty[NUM_TREASURES];
-
-    for (int i = 0; i < NUM_TREASURES; ++i) {
-        if (!sent_flags[i]) {
-            tx[n_visiveis] = treasure_x[i];
-            ty[n_visiveis] = treasure_y[i];
-            n_visiveis++;
-        }
-    }
 
     desenhar_tesouros_restantes();
     memset(sent_flags, 0, sizeof(sent_flags));
