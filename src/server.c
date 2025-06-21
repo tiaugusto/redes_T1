@@ -5,8 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
+#include <sys/stat.h>
 
-#include "net.h"
+#include "socket.h"
 #include "protocol_net.h"
 #include "protocol.h"
 #include "ui_server.h"
@@ -14,10 +15,9 @@
 
 #define NUM_TREASURES 8
 #define GRID_SIZE     8
-#define MAX_RETRANS   5
 
 static int sock_fd;
-static uint8_t seq_num = 0;
+static unsigned char seq_num = 0;
 static int treasure_x[NUM_TREASURES];
 static int treasure_y[NUM_TREASURES];
 static bool sent_flags[NUM_TREASURES];
@@ -43,39 +43,36 @@ static void init_treasures(void) {
 }
 
 static int send_reliable(msg_type_t type,
-                         const uint8_t *payload,
-                         uint8_t len) {
-    int attempts = 0;
+                         const unsigned char *payload,
+                         unsigned char len) {
     msg_type_t ack_type;
-    uint8_t ack_seq, dummy_len;
+    unsigned char ack_seq;
+    unsigned char dummy_len = 0;
 
-    while (attempts < MAX_RETRANS) {
-        //fprintf(stderr, "[SEND_RELIABLE] seq=%u type=%u len=%u\n",
-                //seq_num, type, len);
-        //printf("[SERVER] Respondendo ACK para seq=%d\n", recv_seq);
+    while (1) {
         if (protocol_send(sock_fd, seq_num, type, payload, len) < 0) {
             fprintf(stderr, "[SEND_RELIABLE] envio falhou\n");
             return -1;
         }
 
         int rv = protocol_recv(sock_fd, &ack_seq, &ack_type, NULL, &dummy_len);
+
         if (rv == 1 && ack_type == MSG_ACK && ack_seq == seq_num) {
             seq_num = (seq_num + 1) % SEQ_MODULO;
             return 0;
         }
-        attempts++;
     }
+    
     return -1;
 }
 
 static int send_file(int id) {
     const char *filename = get_treasure_filename(id);
     if (!filename) {
-        ui_show_status("Erro: nome de arquivo nulo");
         return -1;
     }
 
-    uint8_t fname_len = (uint8_t)strlen(filename);
+    unsigned char fname_len = (unsigned char)strlen(filename);
 
     msg_type_t ini_type;
     if (ends_with(filename, ".txt"))
@@ -85,7 +82,7 @@ static int send_file(int id) {
     else
         ini_type = MSG_IMAGEM_ACK_NOME;
 
-    if (send_reliable(ini_type, (const uint8_t *)filename, fname_len) < 0) {
+    if (send_reliable(ini_type, (const unsigned char *)filename, fname_len) < 0) {
         ui_show_status("Erro: não enviou nome de arquivo");
         return -1;
     }
@@ -98,10 +95,30 @@ static int send_file(int id) {
         return -1;
     }
 
-    uint8_t buf[MAX_DATA_LEN];
+    struct stat st;
+    if (stat(path, &st) != 0 || !S_ISREG(st.st_mode)) {
+        unsigned char code = ERR_PERMISSAO;
+        send_reliable(MSG_ERRO, &code, 1);
+        return -1;
+    }
+    uint32_t fsize = (uint32_t)st.st_size;
+    unsigned char size_payload[4];
+    size_payload[0] = (fsize >> 24) & 0xFF;   /* big-endian, byte mais significativo  */
+    size_payload[1] = (fsize >> 16) & 0xFF;
+    size_payload[2] = (fsize >>  8) & 0xFF;
+    size_payload[3] =  fsize        & 0xFF;
+
+    if (send_reliable(MSG_TAMANHO, size_payload, 4) < 0) {
+        ui_show_status("Erro: cliente não aceitou tamanho");
+        fclose(f);
+        return -1;
+    }
+
+
+    unsigned char *buf = malloc(MAX_DATA_LEN);
     size_t n;
     while ((n = fread(buf, 1, MAX_DATA_LEN, f)) > 0) {
-        if (send_reliable(MSG_DADOS, buf, (uint8_t)n) < 0) {
+        if (send_reliable(MSG_DADOS, buf, (unsigned char)n) < 0) {
             ui_show_status("Erro: falha ao enviar dados");
             fclose(f);
             return -1;
@@ -114,6 +131,7 @@ static int send_file(int id) {
         return -1;
     }
 
+    free(buf);
     return 0;  // sucesso!
 }
 
@@ -147,7 +165,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    sock_fd = net_init(iface);
+    sock_fd = open_raw_socket(iface);
     ui_init();
 
     init_treasures();
@@ -157,12 +175,21 @@ int main(int argc, char **argv) {
     memset(sent_flags, 0, sizeof(sent_flags));
 
     while (1) {
-        uint8_t recv_seq, len;
+        unsigned char recv_seq, len;
         msg_type_t type;
-        uint8_t payload[MAX_DATA_LEN];
+        unsigned char payload[MAX_DATA_LEN];
 
         int rv = protocol_recv(sock_fd, &recv_seq, &type, payload, &len);
         if (rv <= 0) {
+            continue;
+        }
+
+        if (type == MSG_ERRO) {
+            /* cancela eventual transmissão em andamento                      */
+            /* (no seu protocolo servidor é o remetente, então só descarta)    */
+            protocol_send(sock_fd, recv_seq, MSG_ACK, NULL, 0);  /* confirma   */
+            ui_show_status("Cliente reportou erro, cancelando envio.");
+            /* não altera seq_num, pois ACK não consome novo número            */
             continue;
         }
 
@@ -175,11 +202,7 @@ int main(int argc, char **argv) {
                 case MSG_MOV_DIR:  if (px < GRID_SIZE - 1) px++; break;
                 default: break;
             }
-            //fprintf(stderr, "[SERVER] ACK para seq=%d (tipo %d recebido)\n", recv_seq, type);
 
-            // ACK do movimento
-            //fprintf(stderr, "[SERVER] Enviando ACK: seq=%d\n", recv_seq);
-            //fprintf(stderr, "[SERVER] Respondendo ACK para seq=%d\n", recv_seq);
             protocol_send(sock_fd, recv_seq, MSG_ACK, NULL, 0);
 
             desenhar_tesouros_restantes();

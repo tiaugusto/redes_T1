@@ -1,24 +1,24 @@
 CFLAGS=-Wall -g
-LIBS=-lncurses -lpthread
+LIBS=-lncurses -ltinfo -lpthread
 
 all: server client
 
-server: server.c protocol_net.o protocol.o net.o ui_server.o utils.o
+server: server.c protocol_net.o protocol.o socket.o ui_server.o utils.o
 	$(CC) $(CFLAGS) -o server \
-		server.c protocol_net.o protocol.o net.o ui_server.o utils.o $(LIBS)
+		server.c protocol_net.o protocol.o socket.o ui_server.o utils.o $(LIBS)
 
-client: client.c protocol_net.o protocol.o net.o ui_client.o
+client: client.c protocol_net.o protocol.o socket.o ui_client.o
 	$(CC) $(CFLAGS) -o client \
-		client.c protocol_net.o protocol.o net.o ui_client.o $(LIBS)
+		client.c protocol_net.o protocol.o socket.o ui_client.o $(LIBS)
 
 protocol.o: protocol.c protocol.h
 	$(CC) $(CFLAGS) -c protocol.c
 
-protocol_net.o: protocol_net.c protocol_net.h protocol.h net.h
+protocol_net.o: protocol_net.c protocol_net.h protocol.h socket.h
 	$(CC) $(CFLAGS) -c protocol_net.c
 
-net.o: net.c net.h
-	$(CC) $(CFLAGS) -c net.c
+socket.o: socket.c socket.h
+	$(CC) $(CFLAGS) -c socket.c
 
 ui_server.o: ui_server.c ui_server.h
 	$(CC) $(CFLAGS) -c ui_server.c

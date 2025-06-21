@@ -18,7 +18,11 @@ campos da msg e onde estão:
 /*— Constantes —*/
 #define FRAME_MARKER 0x7E    // 0111 1110
 #define MAX_DATA_LEN 127     // payload máximo
+#define PACKET_SIZE 131
 #define SEQ_MODULO 32      // 5 bits → 0…31
+#define ERROR_NO_PERMISSION 0
+#define ERR_PERMISSAO    0   /* sem permissão de acesso */
+#define ERR_DISK_FULL    1   /* espaço insuficiente */
 
 #define MAX_RETRANSMISSIONS 5
 
@@ -48,44 +52,22 @@ typedef enum {
 } err_code_t;
 
 /**
- * @brief   Calcula o checksum do frame:
+ *  Calcula o checksum do frame:
  *          checksum = ~ (len + seq + type + Σdata[i])
- * @param   len   número de bytes de payload (0…MAX_DATA_LEN)
- * @param   seq   número de sequência (0…SEQ_MODULO-1)
- * @param   type  tipo de mensagem (0…15)
- * @param   data  ponteiro para payload (ou NULL se len==0)
- * @return  checksum de 8 bits
+ * len   número de bytes de payload (0…MAX_DATA_LEN)
+ * seq   número de sequência (0…SEQ_MODULO-1)
+ * type  tipo de mensagem (0…15)
+ * data  ponteiro para payload (ou NULL se len==0)
+ * retorna checksum de 8 bits
  */
-uint8_t compute_csum(uint8_t len,
-                         uint8_t seq,
-                         msg_type_t type,
-                         const uint8_t *data);
+unsigned char compute_csum(unsigned char len,unsigned char seq,msg_type_t type,const unsigned char *data);
 
-/**
- * @brief Empacota um frame de acordo com a mensagem descrita no início do arquivo
- *
- * @param seq     0…31 (5 bits)
- * @param type    0…15 (4 bits)
- * @param data    ponteiro (ou NULL se len==0) 
- * @param len     0…MAX_DATA_LEN (7 bits)
- * @param buf     saída, precisa ter (4+len) bytes
- * @return        total de bytes escritos (4+len), ou 0 em erro
- */
-size_t pack_frame(uint8_t seq,
-                  uint8_t type,
-                  const uint8_t *data,
-                  uint8_t len,
-                  uint8_t *buf);
 
-/**
- * @brief Desempacota buf[0..length−1], validando marker/tamanho/csum.
- * @return 0 em sucesso (preenche seq/type/data/len), –1 em erro.
- */
-int unpack_frame(const uint8_t *buf,
-                 size_t length,
-                 uint8_t *out_seq,
-                 msg_type_t *out_type,
-                 uint8_t *out_data,
-                 uint8_t *out_len);
+int pack_frame(unsigned char seq, msg_type_t type, const unsigned char *data, unsigned char len, unsigned char *buf);
+
+
+int unpack_frame(const unsigned char *buf, int length, unsigned char *out_seq, msg_type_t *out_type, unsigned char *out_data, unsigned char *out_len);
+
+
 
 #endif

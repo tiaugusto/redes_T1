@@ -4,18 +4,18 @@
 #include <stdint.h>
 #include <unistd.h>
 #include "protocol.h"
-#include "net.h"
+#include "socket.h"
 
-ssize_t protocol_send(int sockfd,
-                      uint8_t seq,
+int protocol_send(int sockfd,
+                      unsigned char seq,
                       msg_type_t type,
-                      const uint8_t *data,
-                      uint8_t len);
+                      const unsigned char *data,
+                      unsigned char len);
 
 int protocol_recv(int sockfd,
-                  uint8_t *out_seq,
+                  unsigned char *out_seq,
                   msg_type_t *out_type,
-                  uint8_t *out_data,
-                  uint8_t *out_len);
+                  unsigned char *out_data,
+                  unsigned char *out_len);
 
 #endif // PROTOCOL_NET_H

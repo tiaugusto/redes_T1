@@ -23,9 +23,9 @@ char ui_read_command(void);
 
 /** Handlers para diferentes tipos de dados recebidos */
 void ui_handle_text(const char *data, size_t len);
-void ui_handle_image(const uint8_t *data, size_t len);
-void ui_handle_video(const uint8_t *data, size_t len);
-void ui_handle_data_chunk(const uint8_t *data, size_t len);
+void ui_handle_image(const unsigned char *data, size_t len);
+void ui_handle_video(const unsigned char *data, size_t len);
+void ui_handle_data_chunk(const unsigned char *data, size_t len);
 void ui_complete_file(void);
 
 /** Fecha a UI do cliente */
