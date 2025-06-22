@@ -15,6 +15,7 @@
 
 static int sock_fd;
 static unsigned char seq_num = 0;
+static unsigned char last_data_seq = -1; // valor inválido inicial
 static int player_x = 0, player_y = 0;
 
 /* ---------- estado para download de arquivo ------------------------ */
@@ -85,24 +86,35 @@ static void process_packet(unsigned char seq, msg_type_t type,
 
     /* ---------- dados ---------- */
     if (type == MSG_DADOS && rx_file) {
-        fwrite(payload,1,len,rx_file);
+        if (seq == last_data_seq) {
+            protocol_send(sock_fd, seq, MSG_ACK, NULL, 0);
+            return;
+        }
+        fwrite(payload, 1, len, rx_file);
+        last_data_seq = seq;
         protocol_send(sock_fd, seq, MSG_ACK, NULL, 0);
         return;
     }
 
     /* ---------- fim ---------- */
     if (type == MSG_FIM_ARQ && rx_file) {
+        if (seq == last_data_seq) {
+            protocol_send(sock_fd, seq, MSG_ACK, NULL, 0);
+            return;
+        }
+
         fclose(rx_file); rx_file = NULL;
+        last_data_seq = seq;
         protocol_send(sock_fd, seq, MSG_ACK, NULL, 0);
 
 
-            char path[96];
-            snprintf(path, sizeof(path), "tesouros/%s", rx_name);
-            char cmd[128];
-            snprintf(cmd, sizeof(cmd), "xdg-open '%s' >/dev/null 2>&1 &", path);
-            system(cmd);
+        char path[96];
+        snprintf(path, sizeof(path), "tesouros/%s", rx_name);
+        char cmd[128];
+        snprintf(cmd, sizeof(cmd), "xdg-open '%s' >/dev/null 2>&1 &", path);
+        system(cmd);
 
-            ui_show_status("Tesouro aberto.");
+        ui_show_status("Tesouro aberto.");
     }
 
     // erros
