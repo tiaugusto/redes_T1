@@ -39,11 +39,9 @@ void ui_init(void) {
 void ui_draw_map(const int *treasure_x, const int *treasure_y, int n) {
     werase(win_map);
     for (int i = 0; i < n; ++i) {
-        int x = treasure_x[i];
-        int y = treasure_y[i];
-         if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
-            mvwprintw(win_map, y, x * 2, "$ ");
-        }
+        int x = treasure_x[i], y = treasure_y[i];
+        if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) continue;
+        mvwprintw(win_map, GRID_SIZE-1-x, y*2, "$ ");
     }
     wrefresh(win_map);
     box(win_border, 0, 0);

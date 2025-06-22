@@ -27,6 +27,9 @@ static void init_treasures(void) {
     for (int i = 0; i < NUM_TREASURES; ) {
         int x = rand() % GRID_SIZE;
         int y = rand() % GRID_SIZE;
+
+        if (x == 0 && y == 0)
+            continue;
         bool exists = false;
         for (int j = 0; j < i; j++) {
             if (treasure_x[j] == x && treasure_y[j] == y) {
@@ -155,7 +158,7 @@ int main(int argc, char **argv) {
     char *iface = NULL;
     int opt;
 
-    static int px = 0, py = 0;
+    static int player_x = 0, player_y = 0;
 
     while ((opt = getopt(argc, argv, "i:")) != -1) {
         if (opt == 'i') iface = optarg;
@@ -196,10 +199,10 @@ int main(int argc, char **argv) {
         if (type >= MSG_MOV_DIR && type <= MSG_MOV_LEFT) {
             
             switch (type) {
-                case MSG_MOV_UP:   if (py > 0) py--; break;
-                case MSG_MOV_DOWN: if (py < GRID_SIZE - 1) py++; break;
-                case MSG_MOV_LEFT: if (px > 0) px--; break;
-                case MSG_MOV_DIR:  if (px < GRID_SIZE - 1) px++; break;
+                case MSG_MOV_UP:   if (player_x < GRID_SIZE - 1) player_x++; break;
+                case MSG_MOV_DOWN: if (player_x > 0) player_x--; break;
+                case MSG_MOV_LEFT: if (player_y > 0) player_y--; break;
+                case MSG_MOV_DIR:  if (player_y < GRID_SIZE - 1) player_y++; break;
                 default: break;
             }
 
@@ -208,16 +211,18 @@ int main(int argc, char **argv) {
             desenhar_tesouros_restantes();
             char status[64];
             snprintf(status, sizeof(status),
-                     "Jogador em (%d,%d)", px, py);
+                     "Jogador em (%d,%d)", player_x, player_y);
             ui_show_status(status);
 
 
             // Verifica tesouro
             for (int i = 0; i < NUM_TREASURES; i++) {
-                if (!sent_flags[i] && px == treasure_x[i] && py == treasure_y[i]) {
+                if (!sent_flags[i] && player_x == treasure_x[i] && player_y == treasure_y[i]) {
                     if (send_file(i) == 0) {
                         sent_flags[i] = true;
-                        ui_show_status("Enviando arquivo do tesouro");
+                        char msg[64];
+                        snprintf(msg, sizeof(msg), "Enviando tesouro %d", i + 1);
+                        ui_show_status(msg);
                         desenhar_tesouros_restantes();
                     }
                 }

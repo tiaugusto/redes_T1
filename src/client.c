@@ -19,7 +19,7 @@ static unsigned char last_data_seq = -1; // valor inválido inicial
 static int player_x = 0, player_y = 0;
 
 /* ---------- estado para download de arquivo ------------------------ */
-static FILE  *rx_file  = NULL;
+static FILE *rx_file  = NULL;
 static char rx_name[64];
 static msg_type_t rx_kind;
 
@@ -110,9 +110,6 @@ static void process_packet(unsigned char seq, msg_type_t type,
 
         char path[96];
         snprintf(path, sizeof(path), "tesouros/%s", rx_name);
-        char cmd[128];
-        snprintf(cmd, sizeof(cmd), "xdg-open '%s' >/dev/null 2>&1 &", path);
-        system(cmd);
 
         ui_show_status("Tesouro aberto.");
     }
@@ -142,10 +139,10 @@ static void process_packet(unsigned char seq, msg_type_t type,
 static void confirm_move(msg_type_t mov)
 {
     switch (mov) {
-        case MSG_MOV_UP:    if (player_y > 0) player_y--; break;
-        case MSG_MOV_DOWN:  if (player_y < GRID_SIZE-1) player_y++; break;
-        case MSG_MOV_LEFT:  if (player_x > 0) player_x--; break;
-        case MSG_MOV_DIR:   if (player_x < GRID_SIZE-1) player_x++; break;
+        case MSG_MOV_UP:    if (player_x < GRID_SIZE-1) player_x++; break;
+        case MSG_MOV_DOWN:  if (player_x > 0) player_x--; break;
+        case MSG_MOV_LEFT:  if (player_y > 0) player_y--; break;
+        case MSG_MOV_DIR:   if (player_y < GRID_SIZE-1) player_y++; break;
         default: break;
     }
     ui_draw_map(&player_x,&player_y,1);
