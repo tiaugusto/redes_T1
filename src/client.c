@@ -168,8 +168,9 @@ void send_move(msg_type_t mov_type)
 
         if (rv == 0) break; /* timeout → retransmitir */
 
-        if (type == MSG_NACK && seq == seq_num) /* servidor não aceitou  */
+        if (type == MSG_NACK && seq == seq_num) { /* servidor não aceitou  */
             break; /* força retransmissão   */
+        }
 
         if (type == MSG_ERRO) {                      /* erro semântico        */
             process_packet(seq, type, buf, len);     /* exibe ao usuário      */

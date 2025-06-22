@@ -18,7 +18,7 @@ campos da msg e onde estão:
 /*— Constantes —*/
 #define FRAME_MARKER 0x7E    // 0111 1110
 #define MAX_DATA_LEN 127     // payload máximo
-#define PACKET_SIZE 131
+#define PACKET_SIZE (4 + 2 * MAX_DATA_LEN)
 #define SEQ_MODULO 32      // 5 bits → 0…31
 #define ERROR_NO_PERMISSION 0
 #define ERR_PERMISSAO    0   /* sem permissão de acesso */

@@ -27,14 +27,21 @@ int pack_frame(unsigned char seq, msg_type_t type, const unsigned char *data, un
     // Byte 2 = seq[3..0] <<4 | type[3..0]
     buf[2] = (unsigned char)(((seq & 0x0F) << 4) | (type & 0x0F));
 
+    // Duplicação
+    unsigned char expanded_data[2 * MAX_DATA_LEN];
+    for (int i = 0; i < len; i++) {
+        expanded_data[2 * i] = data[i];
+        expanded_data[2 * i + 1] = 0xFF;
+    }
+
     // Byte 3 = checksum
     buf[3] = compute_csum(len, seq, type, data);
 
     // Bytes 4…x = payload
     if (len)
-        memcpy(buf + 4, data, len);
+        memcpy(buf + 4, expanded_data, 2*len);
 
-    return 4 + len;
+    return 4 + 2 * len;
 }
 
 int unpack_frame(const unsigned char *buf, int length, unsigned char *out_seq, msg_type_t *out_type, unsigned char *out_data, unsigned char *out_len)
@@ -58,11 +65,17 @@ int unpack_frame(const unsigned char *buf, int length, unsigned char *out_seq, m
 
     unsigned char seq = (msb_seq << 4) | seq_low;
 
-    if (length < (4 + len)) {
+    if (length < 4 + 2 * len) {
         return -1;
     }
 
-    unsigned char checksum = compute_csum(len, seq, type, buf + 4);
+    // Remove duplicação
+    unsigned char real_data[MAX_DATA_LEN];
+    for (int i = 0; i < len; i++) {
+        real_data[i] = buf[4 + 2 * i];  // pega só os bytes reais
+    }
+
+    unsigned char checksum = compute_csum(len, seq, type, real_data);
     if (buf[3] != checksum) {
         return -1;
     }
@@ -72,7 +85,7 @@ int unpack_frame(const unsigned char *buf, int length, unsigned char *out_seq, m
     *out_seq = seq;
     *out_type = type;
     if (len > 0 && out_data != NULL)
-        memcpy(out_data, buf + 4, len);
+        memcpy(out_data, real_data, len);
 
     return 0;
 }
