@@ -10,7 +10,7 @@
 #include "socket.h"
 #include "protocol_net.h"
 #include "protocol.h"
-#include "ui_server.h"
+#include "ui.h"
 #include "utils.h"
 
 #define NUM_TREASURES 8
@@ -83,7 +83,7 @@ static int send_file(int id) {
         ini_type = MSG_IMAGEM_ACK_NOME;
 
     if (send_reliable(ini_type, (const unsigned char *)filename, fname_len) < 0) {
-        ui_show_status("Erro: não enviou nome de arquivo");
+        ui_server_show_status("Erro: não enviou nome de arquivo");
         return -1;
     }
 
@@ -91,7 +91,7 @@ static int send_file(int id) {
     snprintf(path, sizeof(path), "objetos/%s", filename);
     FILE *f = fopen(path, "rb");
     if (!f) {
-        ui_show_status("Erro: não abriu arquivo");
+        ui_server_show_status("Erro: não abriu arquivo");
         return -1;
     }
 
@@ -109,7 +109,7 @@ static int send_file(int id) {
     size_payload[3] =  fsize        & 0xFF;
 
     if (send_reliable(MSG_TAMANHO, size_payload, 4) < 0) {
-        ui_show_status("Erro: cliente não aceitou tamanho");
+        ui_server_show_status("Erro: cliente não aceitou tamanho");
         fclose(f);
         return -1;
     }
@@ -119,7 +119,7 @@ static int send_file(int id) {
     size_t n;
     while ((n = fread(buf, 1, MAX_DATA_LEN, f)) > 0) {
         if (send_reliable(MSG_DADOS, buf, (unsigned char)n) < 0) {
-            ui_show_status("Erro: falha ao enviar dados");
+            ui_server_show_status("Erro: falha ao enviar dados");
             fclose(f);
             return -1;
         }
@@ -127,7 +127,7 @@ static int send_file(int id) {
     fclose(f);
 
     if (send_reliable(MSG_FIM_ARQ, NULL, 0) < 0) {
-        ui_show_status("Erro: falha fim de arquivo");
+        ui_server_show_status("Erro: falha fim de arquivo");
         return -1;
     }
 
@@ -147,7 +147,7 @@ static void desenhar_tesouros_restantes(void) {
         }
     }
 
-    ui_draw_map(tx, ty, n_visiveis);
+    ui_server_draw_map(tx, ty, n_visiveis);
 }
 
 
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
     }
 
     sock_fd = open_raw_socket(iface);
-    ui_init();
+    ui_server_init();
 
     init_treasures();
 
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
             /* cancela eventual transmissão em andamento                      */
             /* (no seu protocolo servidor é o remetente, então só descarta)    */
             protocol_send(sock_fd, recv_seq, MSG_ACK, NULL, 0);  /* confirma   */
-            ui_show_status("Cliente reportou erro, cancelando envio.");
+            ui_server_show_status("Cliente reportou erro, cancelando envio.");
             /* não altera seq_num, pois ACK não consome novo número            */
             continue;
         }
@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
             char status[64];
             snprintf(status, sizeof(status),
                      "Jogador em (%d,%d)", px, py);
-            ui_show_status(status);
+            ui_server_show_status(status);
 
 
             // Verifica tesouro
@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
                 if (!sent_flags[i] && px == treasure_x[i] && py == treasure_y[i]) {
                     if (send_file(i) == 0) {
                         sent_flags[i] = true;
-                        ui_show_status("Enviando arquivo do tesouro");
+                        ui_server_show_status("Enviando arquivo do tesouro");
                         desenhar_tesouros_restantes();
                     }
                 }
