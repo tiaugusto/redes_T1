@@ -16,13 +16,12 @@ campos da msg e onde estão:
 */
 
 /*— Constantes —*/
-#define FRAME_MARKER 0x7E    // 0111 1110
-#define MAX_DATA_LEN 127     // payload máximo
+#define FRAME_MARKER 0x7E  // 0111 1110
+#define MAX_DATA_LEN 127  // payload máximo
 #define PACKET_SIZE (4 + 2 * MAX_DATA_LEN)
-#define SEQ_MODULO 32      // 5 bits → 0…31
-#define ERROR_NO_PERMISSION 0
-#define ERR_PERMISSAO    0   /* sem permissão de acesso */
-#define ERR_DISK_FULL    1   /* espaço insuficiente */
+#define SEQ_MODULO 32 // 5 bits → 0…31
+#define ERR_PERMISSAO 0   // sem permissão de acesso
+#define ERR_DISK_FULL 1   // espaço insuficiente
 
 #define MAX_RETRANSMISSIONS 5
 
@@ -46,25 +45,9 @@ typedef enum {
     MSG_ERRO = 15
 } msg_type_t;
 
-typedef enum {
-    ERR_NO_PERMISSION = 0,
-    ERR_NO_SPACE = 1
-} err_code_t;
-
-/**
- *  Calcula o checksum do frame:
- *          checksum = ~ (len + seq + type + Σdata[i])
- * len   número de bytes de payload (0…MAX_DATA_LEN)
- * seq   número de sequência (0…SEQ_MODULO-1)
- * type  tipo de mensagem (0…15)
- * data  ponteiro para payload (ou NULL se len==0)
- * retorna checksum de 8 bits
- */
 unsigned char compute_csum(unsigned char len,unsigned char seq,msg_type_t type,const unsigned char *data);
 
-
 int pack_frame(unsigned char seq, msg_type_t type, const unsigned char *data, unsigned char len, unsigned char *buf);
-
 
 int unpack_frame(const unsigned char *buf, int length, unsigned char *out_seq, msg_type_t *out_type, unsigned char *out_data, unsigned char *out_len);
 

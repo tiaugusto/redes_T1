@@ -40,32 +40,35 @@ void ui_client_init(void) {
     wrefresh(win_status);
 }
 
-
+/*
+  x[] = linhas (0..7 de baixo pra cima)
+  y[] = colunas (0..7 esquerda pra direita)
+*/
 void ui_client_draw_map(const int *x, const int *y, int n) {
     werase(win_map);
 
     for (int i = 0; i < n; ++i) {
-        if (x[i] < 0 || x[i] >= GRID_SIZE ||
-            y[i] < 0 || y[i] >= GRID_SIZE)                 /* <-- GUARDA */
-            continue;
-        visited[y[i]][x[i]] = 2;
+        int row = x[i], col = y[i];
+        if (row<0||row>=GRID_SIZE||col<0||col>=GRID_SIZE) continue;
+        visited[row][col] = 2;
     }
 
-    /* desenha do topo (linha 0) até a base (linha GRID_SIZE-1) */
-    for (int row = 0; row < GRID_SIZE; ++row) {
+    for (int vis_r = 0; vis_r < GRID_SIZE; ++vis_r) {
+        // vis_r=0 é topo da janela, corresponde a grid_row = GRID_SIZE-1
+        int grid_row = GRID_SIZE - 1 - vis_r;
         for (int col = 0; col < GRID_SIZE; ++col) {
-            if (visited[row][col] == 2) {
-                wattron(win_map, COLOR_PAIR(1));
-                mvwprintw(win_map, row, col * 2, "X ");
-                wattroff(win_map, COLOR_PAIR(1));
-                visited[row][col] = 1;
-            } else if (visited[row][col] == 1) {
-                wattron(win_map, COLOR_PAIR(3));
-                mvwprintw(win_map, row, col * 2, ". ");
-                wattroff(win_map, COLOR_PAIR(3));
-            } else {
-                mvwprintw(win_map, row, col * 2, "  ");
+            char buf[3] = "  ";
+            int color = 0;
+            if (visited[grid_row][col] == 2) {
+                buf[0] = 'X'; buf[1] = ' '; color = 1;
+                visited[grid_row][col] = 1;
             }
+            else if (visited[grid_row][col] == 1) {
+                buf[0] = '.'; buf[1] = ' '; color = 3;
+            }
+            if (color) wattron(win_map, COLOR_PAIR(color));
+            mvwprintw(win_map, vis_r, col*2, "%s", buf);
+            if (color) wattroff(win_map, COLOR_PAIR(color));
         }
     }
 
@@ -128,11 +131,9 @@ void ui_server_init(void) {
 void ui_server_draw_map(const int *treasure_x, const int *treasure_y, int n) {
     werase(win_map);
     for (int i = 0; i < n; ++i) {
-        int x = treasure_x[i];
-        int y = treasure_y[i];
-         if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
-            mvwprintw(win_map, y, x * 2, "$ ");
-        }
+        int x = treasure_x[i], y = treasure_y[i];
+        if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) continue;
+        mvwprintw(win_map, GRID_SIZE-1-x, y*2, "$ ");
     }
     wrefresh(win_map);
     box(win_border, 0, 0);
