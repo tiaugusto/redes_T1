@@ -15,26 +15,33 @@ DBG     := -g
 OPT     := -O2
 DEF     := -D_DEFAULT_SOURCE
 
-CFLAGS_SHARED := $(CSTD) $(WARN) $(OPT) $(DEF) $(DBG) -Ishared/include
-CFLAGS_CLIENT := $(CSTD) $(WARN) $(OPT) $(DEF) $(DBG) -Iclient/include -Ishared/include
-CFLAGS_SERVER := $(CSTD) $(WARN) $(OPT) $(DEF) $(DBG) -Iserver/include -Ishared/include
+# Caminhos de inclusão
+INC_SHARED := -Ishared/include
 
+# CFLAGS por “módulo”
+CFLAGS_SHARED := $(CSTD) $(WARN) $(OPT) $(DEF) $(DBG) $(INC_SHARED)
+CFLAGS_CLIENT := $(CSTD) $(WARN) $(OPT) $(DEF) $(DBG) $(INC_SHARED)
+CFLAGS_SERVER := $(CSTD) $(WARN) $(OPT) $(DEF) $(DBG) $(INC_SHARED)
+
+# Bibliotecas de linkedição
 LIBS := -Lshared -lshared -lncurses -ltinfo -lpthread
 
 ##########################
 # 2. Fontes & objetos    #
 ##########################
+# --- shared ---
 SHARED_SRC  := $(wildcard shared/src/*.c)
 SHARED_OBJS := $(patsubst shared/src/%.c,shared/src/%.o,$(SHARED_SRC))
 SHARED_LIB  := shared/libshared.a
 
-SERVER_SRC  := $(wildcard server/src/*.c)
-SERVER_OBJS := $(patsubst server/src/%.c,server/src/%.o,$(SERVER_SRC))
-SERVER_BIN  := servidor        # ← binário na raiz
+# --- raiz ---
+SERVER_SRC  := server.c
+SERVER_OBJS := $(patsubst %.c,%.o,$(SERVER_SRC))
+SERVER_BIN  := servidor          # binário na raiz
 
-CLIENT_SRC  := $(wildcard client/src/*.c)
-CLIENT_OBJS := $(patsubst client/src/%.c,client/src/%.o,$(CLIENT_SRC))
-CLIENT_BIN  := cliente         # ← binário na raiz
+CLIENT_SRC  := client.c
+CLIENT_OBJS := $(patsubst %.c,%.o,$(CLIENT_SRC))
+CLIENT_BIN  := cliente           # binário na raiz
 
 ##########################
 # 3. Alvos principais    #
@@ -42,7 +49,7 @@ CLIENT_BIN  := cliente         # ← binário na raiz
 .PHONY: all clean client server
 all: $(SERVER_BIN) $(CLIENT_BIN)
 
-# Atalhos para quem digitar “make client” ou “make server”
+# Atalhos
 client: $(CLIENT_BIN)
 server: $(SERVER_BIN)
 
@@ -59,15 +66,17 @@ $(CLIENT_BIN): $(CLIENT_OBJS) $(SHARED_LIB)
 	$(CC) $(CFLAGS_CLIENT) -o $@ $(CLIENT_OBJS) $(LIBS)
 
 ##################################
-# 5. Regras genéricas para .o    #
+# 5. Regras genéricas / específicas
 ##################################
+# Objetos da pasta shared/src
 shared/src/%.o: shared/src/%.c
 	$(CC) $(CFLAGS_SHARED) -c -o $@ $<
 
-server/src/%.o: server/src/%.c
+# Objetos na raiz
+server.o: server.c
 	$(CC) $(CFLAGS_SERVER) -c -o $@ $<
 
-client/src/%.o: client/src/%.c
+client.o: client.c
 	$(CC) $(CFLAGS_CLIENT) -c -o $@ $<
 
 ##########################
