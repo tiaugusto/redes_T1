@@ -7,24 +7,23 @@
 #include <time.h>
 #include <sys/stat.h>
 
+#include "server.h"
 #include "socket.h"
 #include "protocol_net.h"
 #include "protocol.h"
 #include "ui_server.h"
 #include "utils.h"
 
-#define NUM_TREASURES 8
-#define GRID_SIZE 8
 
-static int sock_fd;
-static unsigned char seq_num = 0;
+int sock_fd;
+unsigned char seq_num = 0;
 
 // Posições dos tesouros e flags indicando se já foram enviados
-static int treasure_x[NUM_TREASURES];
-static int treasure_y[NUM_TREASURES];
-static bool sent_flags[NUM_TREASURES];
+int treasure_x[NUM_TREASURES];
+int treasure_y[NUM_TREASURES];
+bool sent_flags[NUM_TREASURES];
 
-static void init_treasures(void) {
+void init_treasures() {
     srand((unsigned)time(NULL));
     for (int i = 0; i < NUM_TREASURES; ) {
         int x = rand() % GRID_SIZE;
@@ -49,7 +48,7 @@ static void init_treasures(void) {
 }
 
 // Envia pacote e espera confirmação (ACK) com mesmo número de sequência.
-static int send_reliable(msg_type_t type, const unsigned char *payload, unsigned char len) {
+int send_reliable(msg_type_t type, const unsigned char *payload, unsigned char len) {
     msg_type_t ack_type;
     unsigned char ack_seq;
     unsigned char dummy_len = 0;
@@ -73,7 +72,7 @@ static int send_reliable(msg_type_t type, const unsigned char *payload, unsigned
 }
 
 // Envia o arquivo do tesouro identificado por 'id'
-static int send_file(int id) {
+int send_file(int id) {
     const char *filename = get_treasure_filename(id);
     if (!filename) {
         return -1;
@@ -149,7 +148,7 @@ static int send_file(int id) {
 }
 
 // Atualiza visualização do mapa com os tesouros ainda não enviados
-static void desenhar_tesouros_restantes(void) {
+void desenhar_tesouros_restantes() {
     int n_visiveis = 0;
     int tx[NUM_TREASURES], ty[NUM_TREASURES];
 

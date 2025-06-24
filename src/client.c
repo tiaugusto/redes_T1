@@ -5,24 +5,24 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <ncurses.h>
+#include <sys/statvfs.h>  
 #include "protocol.h"
 #include "protocol_net.h"
 #include "socket.h"
 #include "ui_client.h"
-#include <sys/statvfs.h>     
+#include "client.h"   
 
-static int sock_fd;
-static unsigned char seq_num = 0;
-static unsigned char last_data_seq = -1; // valor inválido inicial
-static int player_x = 0, player_y = 0;
+int sock_fd;
+unsigned char seq_num = 0;
+unsigned char last_data_seq = -1; // valor inválido inicial
+int player_x = 0, player_y = 0;
 
 // estado para download de arquivo
-static FILE  *rx_file  = NULL;
-static char rx_name[64];
-static msg_type_t rx_kind;
+FILE  *rx_file  = NULL;
+char rx_name[64];
+msg_type_t rx_kind;
 
-static void process_packet(unsigned char seq, msg_type_t type, const unsigned char *payload, unsigned char len)
-{
+void process_packet(unsigned char seq, msg_type_t type, const unsigned char *payload, unsigned char len) {
     if (type == MSG_NACK) return; // Ignora nacks.
 
     // Início de arquivos.
@@ -128,7 +128,7 @@ static void process_packet(unsigned char seq, msg_type_t type, const unsigned ch
 
 }
 
-static void confirm_move(msg_type_t mov)
+void confirm_move(msg_type_t mov)
 {
     switch (mov) {
         case MSG_MOV_UP:    if (player_x < GRID_SIZE-1) player_x++; break;
