@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
                         sent_flags[i] = true;
                         char msg[64];
                         snprintf(msg, sizeof(msg), "Enviando tesouro %d", i + 1);
-                        ui_show_status(msg);
+                        ui_server_show_status(msg);
                         desenhar_tesouros_restantes();
                     }
                 }

@@ -139,8 +139,8 @@ static void confirm_move(msg_type_t mov)
         case MSG_MOV_DIR:   if (player_y < GRID_SIZE-1) player_y++; break;
         default: break;
     }
-    ui_draw_map(&player_x,&player_y,1);
-    ui_show_status("Movimento confirmado");
+    ui_client_draw_map(&player_x,&player_y,1);
+    ui_client_show_status("Movimento confirmado");
 }
 
 void send_move(msg_type_t mov_type)
