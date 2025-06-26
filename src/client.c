@@ -108,6 +108,11 @@ void process_packet(unsigned char seq, msg_type_t type, const unsigned char *pay
         char path[96];
         snprintf(path, sizeof(path), "tesouros/%s", rx_name);
 
+        char comando[128];
+        snprintf(comando, sizeof(comando), "xdg-open \"%s\" &", path);
+        int rv = system(comando);
+        (void) rv;
+
         ui_show_status("Tesouro aberto.");
     }
 
