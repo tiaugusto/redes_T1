@@ -109,7 +109,7 @@ void process_packet(unsigned char seq, msg_type_t type, const unsigned char *pay
         snprintf(path, sizeof(path), "tesouros/%s", rx_name);
 
         char cmd[256];
-        snprintf(cmd, sizeof(cmd), "xdg-open '%s' /dev/null 2>&1 &", path);
+        snprintf(cmd, sizeof(cmd), "xdg-open '%s' >/dev/null 2>&1 &", path);
         int rv = system(cmd);
         (void) rv;
 
